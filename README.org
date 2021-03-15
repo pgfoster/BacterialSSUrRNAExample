@@ -1,0 +1,117 @@
+#+title: The bacterial SSU rRNA example
+
+The files here are scripts that were used in the phylogenetic analysis of an alignment of bacterial SSU rRNA genes used to illustrate use of the tree-heterogeneous models NDCH and NDCH2. 
+This was described in "Phylogenetic analysis that models compositional heterogeneity over the tree".
+
+The alignment used in the bacterial SSU rRNA Thermus-Deinococcus analyses is available at https://doi.org/10.6084/m9.figshare.13708702.v1
+but it is provided here, as the file =thermus.nex=.
+
+Some analyses use "screen".  To detach screen runs, do =Ctr-a Ctr-d= after they start up.
+
+* A_IQTREE_ChooseModelThermus6
+Model choice for the 6-taxon dataset.  TIM2 is best.
+
+* B_IQTREE_MLAnalysisThermus6
+Analysis of the six-taxon dataset with TIM2, JC, and GTR.  We get the correct biological tree for TIM2, and similar trees for GTR and JC.
+The ML tree for GTR and JC both had T_ruber+Deinococcus when T_ruber+Thermus was expected.
+However, bootstrap supports for the splits was similar among the three models.
+
+|       |     Thermus + |             |               |
+|       | Meiothermus + |   Thermus + | Meiothermus + |
+| Model |   Deinococcus | Meiothermus |   Deinococcus |
+|-------+---------------+-------------+---------------|
+| JC    |            78 |          30 |            58 |
+| GTR   |            84 |          44 |            45 |
+| TIM2  |            86 |          47 |            45 |
+
+
+* C_IQTREE_ChooseModelThermus5
+Remove the T.ruber sequence.  T.ruber is now known as Meiothermus ruber
+: p4 sRemoveMeiothermus.py
+
+Do model choice on the 5-taxon dataset. 
+* D_IQTREE_MLAnalysisThermus5
+Analysis of the 5-taxon dataset with GTR, JC, and TIM2.  We get the "Attract" tree.
+* E_compoTree
+: p4 sCompo.py
+
+* F_TestCompHomogeneity
+- Make a composition table; GC content with and without constant sites
+  : p4 sMakeCompoTable.py
+- Symmetry tests with IQ-Tree
+  : bash doSymtest.sh
+- Symmetry tests with P4
+  : p4 sP4SymTests.py
+- Chi-squared test
+  : p4 sChiSquaredTest.py
+- Compo test using simulations
+  : p4 sCompoTestUsingSimulations.py
+* G_MLTwoCompNDCH
+ML optimization, pickle Tree+Model, make likelihood table
+: p4 sML.py
+AU test with consel.  The "consel" suite of programs needs to be installed
+: p4 sConsel.py
+Do the sims and opts for the TAMCFT, and do the test evaluations.  Results go in tamcft*
+: p4 TAMCFTests.py
+
+* H_BayesianGTRandTwoCompNDCH
+- Do two runs each with GTR and NDCH models, using screen
+: bash doMcmc.bash
+- Plot the likelihoods
+: p4 sPlotLikes.py
+- Evaluate posterior predictive simulations
+: p4 sPostPred.py
+- Diagnostic checks of the MCMC
+: sReadMcmcCheckPoints.py
+- Restart for collecting Stepping Stone likelihoods.  This takes a while.
+: bash doSteppingStone.bash 
+- Combine the step stone likes from the two pairs of runs
+: p4 sCombineSSLikes.py
+- Examine those stepping stone likes, and estimate the marginal likelihoods.  This week, this needs the =digestStepStoneLikes.py= from p4 in your path.
+: bash doDigestStepStoneLikes.sh
+
+* I_ndchWithFreeCompLocation
+As in =H_BayesianGTRandTwoCompNDCH=, but only for NDCH, and with free compLocation, ie those proposals are turned on.
+
+* J_ndchFreeLocationMCMCMC
+As in =I_ndchWithFreeCompLocation=, but using an MCMCMC.
+
+* K_multiCompNDCH
+As in =H_BayesianGTRandTwoCompNDCH=, but fully parameterized for composition.  This is not NDCH2 because it has flat priors.  The compLocation proposal does not apply, as it is fully parameterized.
+
+* L_NDCH2
+As above, but now using NDCH2, with 4 runs.  The first two have fixed priors, and the second two have free priors.
+
+Plot the hyperparameters for the two runs where they are free.
+The hyperparameter for the internal comps varies a lot.  Perhaps it needs a hyperprior?
+: p4 sPlotHypers.py
+
+
+* M_NDCH2_MCMCMC 
+Same but with MCMCMC.
+* N_RootingWithComposition
+ML analysis with NDCH, two composition vectors
+: p4 sML_noRootComp.py
+
+ML with NDCH, with a third composition vector on the root
+: p4 sML_withRootComp.py
+
+Run the MCMC analysis as above.
+Making the consensus tree shows the consensus root.
+: p4 sCons.py
+
+* O_rootingWithSimData
+Since rooting the bacterial SSU rRNA dataset did not go well, this example uses the NDCH2 model on simulated data.
+To simulate the dataset,
+: p4 sSim.py
+
+To run the MCMC,
+: bash doMcmc.bash
+
+To see the consensus tree, with consensus root position and support for all roots visited during the MCMC, 
+: p4 sCons.py
+
+The root is correct, and the root position shows mixing.
+
+
+
